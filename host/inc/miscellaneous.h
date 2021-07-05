@@ -36,7 +36,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #ifdef _WIN32
 #include <processthreadsapi.h>
-inline unsigned int processid() { return GetProcessId(); }
+inline unsigned int processid() { return GetProcessId(NULL); }
 #else
 #include <unistd.h>
 inline unsigned int processid() { return getpid(); }

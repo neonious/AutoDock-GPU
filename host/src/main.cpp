@@ -171,9 +171,10 @@ int main(int argc, char* argv[])
 #ifndef USE_PIPELINE
 	if(nr_devices>1) printf("Info: Parallelization over multiple GPUs is only available if OVERLAP=ON is specified when AD-GPU is build.\n");
 #endif
+	if (nr_devices > 1024) nr_devices = 1024;
 	// Objects that are arguments of docking_with_gpu
-	GpuData cData[nr_devices];
-	GpuTempData tData[nr_devices];
+	GpuData cData[1024];
+	GpuTempData tData[1024];
 	
 	for(int i=0; i<nr_devices; i++){
 		filelist.load_maps_gpu.push_back(true);
