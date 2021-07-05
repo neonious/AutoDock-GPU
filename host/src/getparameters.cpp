@@ -2161,7 +2161,11 @@ void gen_initpop_and_reflig(
 			printf("Error: XML genome contains %d rotatable bonds but current ligand has %d.\n",nrot,myligand->num_of_rotbonds);
 			exit(2);
 		}
+#ifdef WIN32
 		nr_genomes_loaded = std::min<unsigned __int64>(genome.size()/GENOTYPE_LENGTH_IN_GLOBMEM, mypars->num_of_runs);
+#else
+		nr_genomes_loaded = std::min(genome.size()/GENOTYPE_LENGTH_IN_GLOBMEM, mypars->num_of_runs);
+#endif /* WIN32 */
 		if(nr_genomes_loaded < mypars->num_of_runs){
 			printf("Note: XML contains %d genomes but %lu runs are requested, randomizing other runs.\n",nr_genomes_loaded, mypars->num_of_runs);
 		}
