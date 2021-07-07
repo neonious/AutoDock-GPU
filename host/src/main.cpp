@@ -173,8 +173,8 @@ int main(int argc, char* argv[])
 #endif
 	if (nr_devices > 1024) nr_devices = 1024;
 	// Objects that are arguments of docking_with_gpu
-	GpuData cData[1024];
-	GpuTempData tData[1024];
+	GpuData* cData = new GpuData[1024];
+	GpuTempData *tData = new GpuTempData[1024];
 	
 	for(int i=0; i<nr_devices; i++){
 		filelist.load_maps_gpu.push_back(true);
