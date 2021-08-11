@@ -23,32 +23,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 
-#ifndef _WIN32
-#define STRINGIZE2(s) #s
-#define STRINGIZE(s)	STRINGIZE2(s)
-#define KRNL_FILE STRINGIZE(KRNL_SOURCE)
-#define KRNL_FOLDER STRINGIZE(KRNL_DIRECTORY)
-#define KRNL_COMMON STRINGIZE(KCMN_DIRECTORY)
-#define KRNL1 STRINGIZE(K1)
-#define KRNL2 STRINGIZE(K2)
-#define KRNL3 STRINGIZE(K3)
-#define KRNL4 STRINGIZE(K4)
-#define KRNL5 STRINGIZE(K5)
-#define KRNL6 STRINGIZE(K6)
-#define KRNL7 STRINGIZE(K7)
-
-#else
-#define KRNL_FILE KRNL_SOURCE
-#define KRNL_FOLDER KRNL_DIRECTORY
-#define KRNL_COMMON KCMN_DIRECTORY
-#define KRNL1 K1
-#define KRNL2 K2
-#define KRNL3 K3
-#define KRNL4 K4
-#define KRNL5 K5
-#define KRNL6 K6
-#define KRNL7 K7
-#endif
+#define KRNL_FILE "./device/calcenergy.cl"
+#define KRNL_FOLDER "./device"
+#define KRNL_COMMON "./common"
+#define KRNL1 "gpu_calc_initpop"
+#define KRNL2 "gpu_sum_evals"
+#define KRNL3 "perform_LS"
+#define KRNL4 "gpu_gen_and_eval_newpops"
+#define KRNL5 "gradient_minSD"
+#define KRNL6 "gradient_minFire"
+#define KRNL7 "gradient_minAD"
 
 #define INC " -I " KRNL_FOLDER " -I " KRNL_COMMON
 
@@ -136,13 +120,8 @@ void setup_gpu_for_docking(
 	cl_device_id*    device_ids;
 	cl_device_id     device_id;
 
-#ifdef _WIN32
-	const char *filename = KRNL_FILE;
-	printf("%-40s %-40s\n", "Kernel source file: ", filename);  fflush(stdout);
-#else
 	printf("%-40s %-40s\n", "Kernel source used for development: ", "./device/calcenergy.cl");  fflush(stdout);
 	printf("%-40s %-40s\n", "Kernel string used for building: ",    "./host/inc/stringify.h");  fflush(stdout);
-#endif
 
 	const char* options_program = OPT_PROG;
 	printf("%-40s %-40s\n", "Kernel compilation flags: ", options_program); fflush(stdout);
@@ -160,10 +139,20 @@ void setup_gpu_for_docking(
 
 	// Get all available platforms
 	if (getPlatforms(&platform_id,&platformCount) != 0) exit(-1);
-	if (cData.devnum<0) // this is for Cuda to not set the device (in here for compatibility)
-		cData.devnum=0;
-	unsigned int platform_nr=cData.devnum>>8;
-	cData.devnum&=0xFF;
+	cData.devnum=0;
+	unsigned int platform_nr;
+	for(platform_nr = 0; platform_nr < platformCount; platform_nr++) {
+		size_t name_size;
+		clGetPlatformInfo(platform_id[platform_nr], CL_PLATFORM_NAME, 0, NULL, &name_size);
+		char* platform_name = (char*) malloc(name_size);
+		clGetPlatformInfo(platform_id[platform_nr], CL_PLATFORM_NAME, name_size, platform_name, NULL);
+		if(strcmp(platform_name, "AMD Accelerated Parallel Processing") == 0
+		|| strcmp(platform_name, "NVIDIA CUDA") == 0) {
+			free(platform_name);
+			break;
+		}
+		free(platform_name);
+	}
 	if(platform_nr>=platformCount){
 		platform_nr=0;
 		size_t name_size;
@@ -245,17 +234,7 @@ void setup_gpu_for_docking(
 	if (createCommandQueue(tData.context,device_id,&tData.command_queue) != 0) exit(-1);
 
 	// Create program from source
-#ifdef _WIN32
-	if (ImportSource(filename, name_k1, &device_id, tData.context, options_program, &tData.kernel1) != 0) exit(-1);
-	if (ImportSource(filename, name_k2, &device_id, tData.context, options_program, &tData.kernel2) != 0) exit(-1);
-	if (ImportSource(filename, name_k3, &device_id, tData.context, options_program, &tData.kernel3) != 0) exit(-1);
-	if (ImportSource(filename, name_k4, &device_id, tData.context, options_program, &tData.kernel4) != 0) exit(-1);
-	if (ImportSource(filename, name_k5, &device_id, tData.context, options_program, &tData.kernel5) != 0) exit(-1);
-	if (ImportSource(filename, name_k6, &device_id, tData.context, options_program, &tData.kernel6) != 0) exit(-1);
-	if (ImportSource(filename, name_k7, &device_id, tData.context, options_program, &tData.kernel7) != 0) exit(-1);
-#else
 	if (ImportSourceToProgram(calcenergy_ocl, &device_id, tData.context, &tData.program, options_program) != 0) exit(-1);
-#endif
 
 	// Create kernels
 	if (createKernel(&device_id, &tData.program, name_k1, &tData.kernel1) != 0) exit(-1);
